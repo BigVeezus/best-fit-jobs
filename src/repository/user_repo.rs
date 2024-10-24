@@ -1,9 +1,10 @@
+use crate::models::user_model::User;
 use bcrypt::{hash, DEFAULT_COST};
 use mongodb::{
-    bson::{extjson::de::Error, DateTime},
-    results::InsertOneResult, Collection, Database
+    bson::{doc, extjson::de::Error, DateTime},
+    results::InsertOneResult,
+    Collection, Database,
 };
-use crate::models::user_model::User;
 
 pub struct UserRepo {
     col: Collection<User>,
@@ -16,11 +17,10 @@ impl UserRepo {
     }
 
     pub async fn create_user(&self, new_user: User) -> Result<InsertOneResult, Error> {
+        let hashed_password =
+            hash(new_user.password, DEFAULT_COST).expect("Error hashing password");
 
-        let hashed_password = hash(new_user.password, DEFAULT_COST)
-            .expect("Error hashing password");
-
-            let now = DateTime::now();
+        let now = DateTime::now();
 
         let new_doc = User {
             id: None,
@@ -30,7 +30,7 @@ impl UserRepo {
             password: hashed_password,
             ip_address: new_user.ip_address,
             updated_at: Some(now),
-            created_at: Some(now)
+            created_at: Some(now),
         };
         let user = self
             .col
@@ -39,5 +39,10 @@ impl UserRepo {
             .ok()
             .expect("Error creating user");
         Ok(user)
+    }
+
+    pub async fn find_by_email(&self, email: &str) -> Result<Option<User>, mongodb::error::Error> {
+        let filter = doc! { "email": email };
+        self.col.find_one(filter).await
     }
 }
