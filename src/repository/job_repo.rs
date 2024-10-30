@@ -21,6 +21,8 @@ impl JobRepo {
         let new_doc = Job {
             id: None,
             job_title: new_job.job_title,
+            job_image: new_job.job_image,
+            job_description: new_job.job_description,
             location: new_job.location,
             category: new_job.category,
             tags: new_job.tags,

@@ -33,6 +33,8 @@ pub struct Job {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub job_title: String,
+    pub job_image: Option<String>,
+    pub job_description: String,
     pub category: JobCategory,
     pub tags: Vec<ObjectId>,
     pub job_type: JobType,
