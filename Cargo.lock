@@ -413,6 +413,7 @@ name = "best-fit-jobs"
 version = "0.1.0"
 dependencies = [
  "actix-multipart",
+ "actix-service",
  "actix-web",
  "bcrypt",
  "chrono",
@@ -423,6 +424,7 @@ dependencies = [
  "jsonwebtoken",
  "log",
  "mongodb",
+ "rand",
  "reqwest",
  "sanitize-filename",
  "serde",

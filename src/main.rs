@@ -2,10 +2,11 @@
 mod api;
 mod config;
 mod db;
+mod middleware;
 mod models;
 mod repository;
 
-use actix_web::{get, web::Data, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, web, web::Data, App, HttpResponse, HttpServer, Responder};
 use api::{
     jobs_api::create_jobs,
     user_api::{create_user, login},
@@ -13,6 +14,7 @@ use api::{
 use colog;
 use db::mongo_db::MongoRepo;
 use log::info;
+use middleware::jwt_middleware::JwtAuthMiddleware;
 use repository::{job_repo::JobRepo, user_repo::UserRepo};
 
 #[get("/")]
@@ -41,7 +43,12 @@ async fn main() -> std::io::Result<()> {
             .app_data(job_repo_data.clone())
             .service(create_user)
             .service(login)
-            .service(create_jobs)
+            .service(
+                web::scope("/auth") // Protected scope
+                    .wrap(JwtAuthMiddleware) // Apply the JWT middleware here
+                    .service(create_jobs), // Endpoint under JWT protection
+            )
+            .service(hello) // Public endpoint
     })
     .bind(("127.0.0.1", 8080))?
     .run()

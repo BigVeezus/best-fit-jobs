@@ -1,3 +1,4 @@
+use crate::config::rand::random_string;
 use serde_json::Value;
 use std::env;
 use tokio::fs::File;
@@ -45,7 +46,8 @@ impl CloudinaryConfig {
 
         // Asynchronous network request with reqwest
         let client = reqwest::Client::new();
-        let part = reqwest::multipart::Part::bytes(buffer).file_name("upload.png");
+        let unique_file_name = format!("upload_{}.png", random_string(8));
+        let part = reqwest::multipart::Part::bytes(buffer).file_name(unique_file_name);
 
         let form = reqwest::multipart::Form::new()
             .part("file", part)

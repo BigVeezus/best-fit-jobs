@@ -83,8 +83,6 @@ pub async fn create_jobs(
         None => return HttpResponse::BadRequest().body("Missing image file"),
     };
 
-    // let image_path = "path/to/your/image.png";
-
     let cloudinary_config = CloudinaryConfig::new();
 
     let image_url = match cloudinary_config.upload_image(&image_path).await {
