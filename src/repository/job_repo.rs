@@ -1,6 +1,7 @@
 use crate::models::job_model::Job;
+use futures::TryStreamExt;
 use mongodb::{
-    bson::{extjson::de::Error, DateTime},
+    bson::{extjson::de::Error, DateTime, Document},
     results::InsertOneResult,
     Collection, Database,
 };
@@ -40,5 +41,16 @@ impl JobRepo {
             .ok()
             .expect("Error creating job");
         Ok(job)
+    }
+
+    pub async fn get_all_jobs(&self) -> Result<Vec<Job>, mongodb::error::Error> {
+        let filter = Document::new();
+
+        let cursor = self.col.find(filter).await?;
+
+        // Convert the cursor into a vector of Job structs
+        let jobs: Vec<Job> = cursor.try_collect().await?;
+
+        Ok(jobs)
     }
 }

@@ -1,6 +1,5 @@
-use crate::config::cloudinary::CloudinaryConfig;
-use crate::models::job_model::Job;
-use crate::repository::job_repo::JobRepo;
+use crate::models::application_model::Application;
+use crate::{config::cloudinary::CloudinaryConfig, repository::application_repo::ApplicationRepo};
 use actix_multipart::Multipart;
 use actix_web::{
     get, post,
@@ -12,13 +11,9 @@ use log::{error, info};
 use serde_json::{from_slice, json};
 use tokio::{fs::File, io::AsyncWriteExt};
 
-#[post("/jobs")]
-pub async fn create_jobs(
-    db: Data<JobRepo>,
-    // new_job: Json<Job>,
-    mut payload: Multipart,
-) -> HttpResponse {
-    let mut job_data: Option<Job> = None;
+#[post("/applications")]
+pub async fn create_application(db: Data<ApplicationRepo>, mut payload: Multipart) -> HttpResponse {
+    let mut app_data: Option<Application> = None;
     let mut image_path: Option<String> = None;
 
     let mut data_bytes = web::BytesMut::new();
@@ -40,17 +35,17 @@ pub async fn create_jobs(
 
                 // Debugging output
                 info!(
-                    "Received job data: {:?}",
+                    "Received application data: {:?}",
                     String::from_utf8_lossy(&data_bytes)
                 );
 
-                job_data = from_slice::<Job>(&data_bytes).ok();
+                app_data = from_slice::<Application>(&data_bytes).ok();
                 // Additional debug information
 
-                if job_data.is_none() {
+                if app_data.is_none() {
                     info!(
                         "Failed to parse job data from JSON. Raw input: {:?}",
-                        job_data
+                        app_data
                     );
                     // info!("Failed to parse job data from JSON.");
                 }
@@ -75,10 +70,10 @@ pub async fn create_jobs(
         }
     }
 
-    let job_data = match job_data {
+    let app_data = match app_data {
         Some(data) => data,
         None => {
-            return HttpResponse::BadRequest().body("Missing job data");
+            return HttpResponse::BadRequest().body("Missing application data");
         }
     };
 
@@ -101,28 +96,25 @@ pub async fn create_jobs(
         }
     };
 
-    let data = Job {
+    let data = Application {
         id: None,
-        job_title: job_data.job_title.clone(),
-        job_image: Some(image_url), //pass the image here,
-        job_description: job_data.job_description.clone(),
-        job_availability: job_data.job_availability.clone(),
-        tags: job_data.tags.to_owned(),
-        job_duration: job_data.job_duration.to_owned(),
-        contract_duration: job_data.contract_duration.to_owned(),
-        location: job_data.location.to_owned(),
+        full_name: app_data.full_name.clone(),
+        resume: Some(image_url), //pass the resume image here,
+        job_id: app_data.job_id.clone(),
+        email: app_data.email.clone(),
+        cover_letter: app_data.cover_letter.to_owned(),
+        address: app_data.address.to_owned(),
+        country: app_data.country.to_owned(),
         updated_at: None,
         created_at: None,
-        category: job_data.category.clone(),
-        job_type: job_data.job_type.clone(),
     };
-    let job_detail = db.create_job(data).await;
+    let application_detail = db.create_application(data).await;
 
-    match job_detail {
-        Ok(job) => {
-            info!("job created successfully!");
+    match application_detail {
+        Ok(app) => {
+            info!("application created successfully!");
 
-            let response_id = job.inserted_id;
+            let response_id = app.inserted_id;
 
             HttpResponse::Ok().json(json!({ "id": response_id }))
         }
@@ -133,13 +125,13 @@ pub async fn create_jobs(
     }
 }
 
-#[get("/jobs")]
-pub async fn get_all_jobs(db: Data<JobRepo>) -> HttpResponse {
-    match db.get_all_jobs().await {
-        Ok(jobs) => HttpResponse::Ok().json(json!({ "jobs": jobs })),
+#[get("/applications")]
+pub async fn get_all_applications(db: Data<ApplicationRepo>) -> HttpResponse {
+    match db.get_all_applications().await {
+        Ok(apps) => HttpResponse::Ok().json(json!({ "applications": apps })),
         Err(err) => {
-            error!("Failed to retrieve jobs: {}", err);
-            HttpResponse::InternalServerError().body("Failed to retrieve jobs")
+            error!("Failed to retrieve applications: {}", err);
+            HttpResponse::InternalServerError().body("Failed to retrieve applications")
         }
     }
 }

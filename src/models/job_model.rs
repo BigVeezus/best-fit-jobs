@@ -34,9 +34,9 @@ pub struct Job {
     pub id: Option<ObjectId>,
     pub job_title: String,
     pub job_image: Option<String>,
-    pub job_description: String,
+    pub job_description: Option<String>,
     pub category: JobCategory,
-    pub tags: Vec<ObjectId>,
+    pub tags: Option<Vec<String>>,
     pub job_type: JobType,
     pub job_availability: JobAvailability,
     pub job_duration: u32,
@@ -44,6 +44,24 @@ pub struct Job {
     pub location: String,
     pub updated_at: Option<DateTime>,
     pub created_at: Option<DateTime>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JobJSON {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<ObjectId>,
+    pub job_title: String,
+    pub job_image: Option<String>,
+    pub job_description: Option<String>,
+    pub category: JobCategory,
+    pub tags: Option<Vec<String>>,
+    pub job_type: JobType,
+    pub job_availability: JobAvailability,
+    pub job_duration: u32,
+    pub contract_duration: u32,
+    pub location: String,
+    pub updated_at: Option<String>,
+    pub created_at: Option<String>,
 }
 
 impl FromStr for JobAvailability {
