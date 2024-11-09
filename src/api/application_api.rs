@@ -1,4 +1,6 @@
+use crate::config::pdf_extractor::{extract_text_from_pdf, match_score};
 use crate::models::application_model::Application;
+use crate::repository::job_repo::JobRepo;
 use crate::{config::cloudinary::CloudinaryConfig, repository::application_repo::ApplicationRepo};
 use actix_multipart::Multipart;
 use actix_web::{
@@ -12,7 +14,11 @@ use serde_json::{from_slice, json};
 use tokio::{fs::File, io::AsyncWriteExt};
 
 #[post("/applications")]
-pub async fn create_application(db: Data<ApplicationRepo>, mut payload: Multipart) -> HttpResponse {
+pub async fn create_application(
+    db: Data<ApplicationRepo>,
+    job_db: Data<JobRepo>,
+    mut payload: Multipart,
+) -> HttpResponse {
     let mut app_data: Option<Application> = None;
     let mut image_path: Option<String> = None;
 
@@ -82,6 +88,24 @@ pub async fn create_application(db: Data<ApplicationRepo>, mut payload: Multipar
         None => return HttpResponse::BadRequest().body("Missing image file"),
     };
 
+    let pdf_string = extract_text_from_pdf(&image_path)
+        .unwrap_or_else(|e| format!("Failed to extract text: {}", e));
+    // println!("{}", pdf_string);
+
+    let tags = match job_db.fetch_job_tags(&app_data.job_id).await {
+        Ok(Some(tags)) => Ok(Some(tags)),
+        Ok(None) => Ok(None),
+        Err(e) => Err(format!("Error fetching job tags: {}", e)),
+    };
+
+    let score = match tags {
+        Ok(Some(tags)) => match_score(&pdf_string, Some(tags)), // Pass the tags as Option<Vec<String>>
+        Ok(None) => 0.0,                                        // No tags available, return 0 score
+        Err(_) => 0.0, // Handle the error case, return 0 score
+    };
+
+    print!("{}", score.to_string());
+
     let cloudinary_config = CloudinaryConfig::new();
 
     let image_url = match cloudinary_config.upload_image(&image_path).await {
@@ -105,6 +129,7 @@ pub async fn create_application(db: Data<ApplicationRepo>, mut payload: Multipar
         cover_letter: app_data.cover_letter.to_owned(),
         address: app_data.address.to_owned(),
         country: app_data.country.to_owned(),
+        score: Some(score),
         updated_at: None,
         created_at: None,
     };

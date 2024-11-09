@@ -1,7 +1,9 @@
 use crate::models::job_model::Job;
 use futures::TryStreamExt;
+use mongodb::bson::{doc, oid::ObjectId};
+use mongodb::error::Error;
 use mongodb::{
-    bson::{extjson::de::Error, DateTime, Document},
+    bson::{DateTime, Document},
     results::InsertOneResult,
     Collection, Database,
 };
@@ -52,5 +54,27 @@ impl JobRepo {
         let jobs: Vec<Job> = cursor.try_collect().await?;
 
         Ok(jobs)
+    }
+
+    pub async fn fetch_job_tags(
+        &self,
+        job_id: &ObjectId,
+    ) -> Result<Option<Vec<String>>, mongodb::error::Error> {
+        let filter = doc! { "_id": job_id };
+
+        match self.col.find_one(filter).await {
+            Ok(Some(job)) => {
+                // If the job is found, return the tags
+                Ok(Some(job.tags.unwrap_or_else(|| vec![]))) // Return empty vec if no tags
+            }
+            Ok(None) => {
+                // If no job is found with the given job_id, return None
+                Ok(None)
+            }
+            Err(e) => {
+                // Any other error from MongoDB is returned as-is
+                Err(e)
+            }
+        }
     }
 }

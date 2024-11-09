@@ -28,6 +28,7 @@ impl ApplicationRepo {
             cover_letter: new_app.cover_letter,
             address: new_app.address,
             country: new_app.country,
+            score: new_app.score,
             updated_at: Some(now),
             created_at: Some(now),
         };

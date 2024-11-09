@@ -12,6 +12,7 @@ pub struct Application {
     pub cover_letter: Option<String>,
     pub address: String,
     pub country: String,
+    pub score: Option<f32>,
     pub updated_at: Option<DateTime>,
     pub created_at: Option<DateTime>,
 }
